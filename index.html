@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mandlebrot Set</title>
+    <style>
+      canvas.root {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+    </style>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
+  </head>
+
+  <body>
+    <canvas id="root"></canvas>
+    <script type="module">
+      import init from "./pkg/mandlebrot.js";
+      init().then(() => console.log("Loaded WASM"));
+    </script>
+  </body>
+</html>

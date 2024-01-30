@@ -1,0 +1,44 @@
+[package]
+name = "mandlebrot"
+version = "0.1.0"
+authors = ["maartin0", "The wasm-bindgen developers"]
+description = "Mandlebrot Set Generator"
+repository = "https://github.com/maartin0/mandlebrot"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+console_error_panic_hook = "0.1.7"
+fragile = "2.0.1"
+wasm-bindgen = "0.2.100"
+
+[dependencies.web-sys]
+version = "0.3.77"
+features = [
+  'console',
+  'Document',
+  'Window',
+  'HtmlElement',
+  'Node',
+  'HtmlCanvasElement',
+  'CanvasRenderingContext2d',
+  'WebGlRenderingContext',
+  'WebGl2RenderingContext',
+  'WebGlVertexArrayObject',
+  'WebGlProgram',
+  'WebGlShader',
+  'WebGlBuffer',
+  'WebGlUniformLocation',
+  'Event',
+  'WheelEvent',
+  'KeyboardEvent',
+  'AddEventListenerOptions',
+  'Performance',
+  'PointerEvent',
+  'DomRect',
+]
+
+[dependencies.js-sys]
+version = "0.3.77"
