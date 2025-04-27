@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Event, WheelEvent};
 
-use crate::{matrix::Matrix3, App};
+use crate::{arbitrary_num::ArbitaryNum, matrix::Matrix3, App};
 
 impl App {
     pub fn wheel_listener(app_ref: Rc<RefCell<App>>) -> impl Fn(Event) -> Result<(), JsValue> {
@@ -15,36 +15,37 @@ impl App {
             }
             event.prevent_default();
             event.stop_propagation();
-            let client_width = app.canvas.client_width() as f32;
-            let client_height = app.canvas.client_height() as f32;
+            let client_width = ArbitaryNum::from(app.canvas.client_width());
+            let client_height = ArbitaryNum::from(app.canvas.client_height());
             // TODO: respect event.deltaMode (will currently scroll very slowly if not set to WheelEvent.DOM_DELTA_PIXEL)
-            let delta_x = event.delta_x() as f32;
-            let delta_y = event.delta_y() as f32;
+            let delta_x = ArbitaryNum::from(event.delta_x());
+            let delta_y = ArbitaryNum::from(event.delta_y());
             if app.viewport.keys_held.shift {
                 // Pan only
                 app.viewport.viewport_transform *= Matrix3::scale(
-                    delta_x / client_width * 2.0 - 1.0,
-                    delta_y / client_height * 2.0 - 1.0,
+                    delta_x / client_width * ArbitaryNum::two() - ArbitaryNum::one(),
+                    delta_y / client_height * ArbitaryNum::two() - ArbitaryNum::one(),
                 );
             } else {
                 // Zoom by applying affine transform
-                let factor = 1.0
-                    + if delta_x.abs() > delta_y.abs() {
+                let factor = ArbitaryNum::one()
+                    + if delta_x.clone().abs() > delta_y.clone().abs() {
                         delta_x / client_width
                     } else {
                         delta_y / client_height
                     };
-                let Some((mouse_x, mouse_y)) =
-                    app.viewport.pointers.get(0).map(|pointer| pointer.position)
-                else {
+                let Some((mouse_x, mouse_y)) = app.viewport.pointers.get(0).map(|pointer| {
+                    (
+                        ArbitaryNum::from(pointer.position.0),
+                        ArbitaryNum::from(pointer.position.1),
+                    )
+                }) else {
                     return Ok(());
                 };
                 app.viewport.viewport_transform *=
-                    Matrix3([1.0, 0.0, mouse_x, 0.0, 1.0, mouse_y, 0.0, 0.0, 1.0]);
-                app.viewport.viewport_transform *=
-                    Matrix3([factor, 0.0, 0.0, 0.0, factor, 0.0, 0.0, 0.0, 1.0]);
-                app.viewport.viewport_transform *=
-                    Matrix3([1.0, 0.0, -mouse_x, 0.0, 1.0, -mouse_y, 0.0, 0.0, 1.0]);
+                    Matrix3::translate(mouse_x.clone(), mouse_y.clone());
+                app.viewport.viewport_transform *= Matrix3::scale(factor.clone(), factor);
+                app.viewport.viewport_transform *= Matrix3::translate(-mouse_x, -mouse_y);
             }
             app.draw();
             Ok(())

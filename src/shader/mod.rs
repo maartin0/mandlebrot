@@ -1,9 +1,13 @@
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlUniformLocation};
 
+use crate::{arbitrary_num::ArbitaryNum, matrix::Matrix3, DEPTH};
+
 #[derive(Clone, Debug)]
 pub struct CanvasState {
     vertex_count: i32,
-    transform_uniform_location: WebGlUniformLocation,
+    scale_uniform_location: WebGlUniformLocation,
+    midpoint_iterations_re_uniform_location: WebGlUniformLocation,
+    midpoint_iterations_im_uniform_location: WebGlUniformLocation,
 }
 
 fn compile_shader(
@@ -57,7 +61,7 @@ fn link_program(
     }
 }
 
-pub fn init_shaders(context: &WebGl2RenderingContext, depth: u16) -> CanvasState {
+pub fn init_shaders(context: &WebGl2RenderingContext) -> CanvasState {
     console_error_panic_hook::set_once();
 
     let vert_shader = compile_shader(
@@ -104,7 +108,6 @@ pub fn init_shaders(context: &WebGl2RenderingContext, depth: u16) -> CanvasState
 
     let vao = context.create_vertex_array().unwrap();
     context.bind_vertex_array(Some(&vao));
-
     context.vertex_attrib_pointer_with_i32(
         position_attribute_location as u32,
         3,
@@ -114,27 +117,51 @@ pub fn init_shaders(context: &WebGl2RenderingContext, depth: u16) -> CanvasState
         0,
     );
     context.enable_vertex_attrib_array(position_attribute_location as u32);
-
     context.bind_vertex_array(Some(&vao));
 
-    let depth_uniform_location = context.get_uniform_location(&program, "depth").unwrap();
-    context.uniform1i(Some(&depth_uniform_location), depth as i32);
-
-    let transform_uniform_location = context.get_uniform_location(&program, "transform").unwrap();
-
     CanvasState {
-        transform_uniform_location,
+        scale_uniform_location: context.get_uniform_location(&program, "scale").unwrap(),
+        midpoint_iterations_re_uniform_location: context
+            .get_uniform_location(&program, "midpoint_iterations_re")
+            .unwrap(),
+        midpoint_iterations_im_uniform_location: context
+            .get_uniform_location(&program, "midpoint_iterations_im")
+            .unwrap(),
         vertex_count: (vertices.len() / 3) as i32,
     }
 }
 
-pub fn draw(context: &WebGl2RenderingContext, options: &CanvasState, transform: &[f32; 9]) {
+/// Computes iterations in the mandlebrot set with very high precision
+fn compute_iterations((x, y): (ArbitaryNum, ArbitaryNum)) -> ([f32; DEPTH], [f32; DEPTH]) {
+    let mut re = ArbitaryNum::zero();
+    let mut im = ArbitaryNum::zero();
+    let mut re_result = [0.0; DEPTH];
+    let mut im_result = [0.0; DEPTH];
+    for i in 0..DEPTH {
+        re = re.clone() * re.clone() - im.clone() + x.clone();
+        im = ArbitaryNum::two() * re.clone() * im.clone() + y.clone();
+        re_result[i] = re.clone().into();
+        im_result[i] = im.clone().into();
+    }
+    (re_result, im_result)
+}
+
+pub fn draw(context: &WebGl2RenderingContext, options: &CanvasState, transform: Matrix3) {
+    let scale = [transform[0].clone().into(), transform[4].clone().into()];
+    let (midpoint_x, midpoint_y, _) =
+        transform * (ArbitaryNum::zero(), ArbitaryNum::zero(), ArbitaryNum::one());
+    let (midpoint_iterations_re, midpoint_iterations_im) =
+        compute_iterations((midpoint_x, midpoint_y));
     context.clear_color(0.0, 0.0, 0.0, 1.0);
     context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-    context.uniform_matrix3fv_with_f32_array(
-        Some(&options.transform_uniform_location),
-        false,
-        transform,
+    context.uniform2fv_with_f32_array(Some(&options.scale_uniform_location), &scale);
+    context.uniform1fv_with_f32_array(
+        Some(&options.midpoint_iterations_re_uniform_location),
+        &midpoint_iterations_re,
+    );
+    context.uniform1fv_with_f32_array(
+        Some(&options.midpoint_iterations_im_uniform_location),
+        &midpoint_iterations_im,
     );
     context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, options.vertex_count);
 }

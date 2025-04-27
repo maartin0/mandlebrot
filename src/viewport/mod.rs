@@ -5,7 +5,7 @@ use pointer::Pointer;
 use wasm_bindgen::JsValue;
 use web_sys::Event;
 
-use crate::{matrix::Matrix3, util::add_event_listener, App};
+use crate::{arbitrary_num::ArbitaryNum, matrix::Matrix3, util::add_event_listener, App};
 
 mod keyboard;
 mod pointer;
@@ -16,14 +16,14 @@ mod window;
 pub struct ViewportController {
     keys_held: KeysHeld,
     pointers: Vec<Pointer>,
-    last_frame_ms: f32,
+    last_frame_ms: f64,
     viewport_transform: Matrix3,
     window_transform: Matrix3,
 }
 
 impl ViewportController {
     pub fn transform(&self) -> Matrix3 {
-        self.viewport_transform * self.window_transform
+        self.viewport_transform.clone() * self.window_transform.clone()
     }
 }
 
@@ -126,6 +126,9 @@ impl App {
         self.context.viewport(0, 0, width, height);
 
         // Avoid stretching viewport
-        self.viewport.window_transform = Matrix3::scale(1.0, height as f32 / width as f32);
+        self.viewport.window_transform = Matrix3::scale(
+            1.into(),
+            ArbitaryNum::from(height) / ArbitaryNum::from(width),
+        );
     }
 }

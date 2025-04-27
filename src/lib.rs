@@ -10,12 +10,13 @@ use web_sys::{
     window, HtmlCanvasElement, HtmlElement, Performance, WebGl2RenderingContext, Window,
 };
 
+mod arbitrary_num;
 mod matrix;
 mod shader;
 mod util;
 mod viewport;
 
-const DEPTH: u16 = 1000;
+pub const DEPTH: usize = 500;
 
 #[derive(Clone, Debug)]
 struct App {
@@ -53,7 +54,7 @@ impl App {
         let context: WebGl2RenderingContext = canvas.get_context("webgl2")?.unwrap().dyn_into()?;
         let performance = window.performance().unwrap();
 
-        let props = init_shaders(&context, DEPTH);
+        let props = init_shaders(&context);
 
         let mut result = Self {
             window,
@@ -75,11 +76,7 @@ impl App {
     }
 
     fn draw(&self) {
-        draw(
-            &self.context,
-            &self.props,
-            &self.viewport.transform().into(),
-        )
+        draw(&self.context, &self.props, self.viewport.transform())
     }
 
     fn setup(app_ref: &Rc<RefCell<App>>) -> Result<(), JsValue> {

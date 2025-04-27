@@ -4,8 +4,12 @@ precision highp float;
 
 in vec2 vPos;
 
-uniform int depth;
-uniform mat3 transform;
+const int DEPTH = 500;
+
+uniform vec2 scale;
+
+uniform float midpoint_iterations_re[DEPTH];
+uniform float midpoint_iterations_im[DEPTH];
 
 out vec4 outColor;
 
@@ -17,10 +21,10 @@ vec2 square(vec2 im) {
 }
 
 float pixel(vec2 pos) {
-    vec2 z = vec2(0, 0);
-    for (int i = 0; i < depth; i++) {
-        z = square(z) + pos;
-        if (length(z) > 2.0) return float(i) / float(depth);
+    vec2 e = vec2(0, 0);
+    for (int i = 0; i < DEPTH; i++) {
+        e = 2.0 * vec2(midpoint_iterations_re[i], midpoint_iterations_im[i]) * e * square(e) + pos;
+        if (length(e) > 2.0) return float(i) / float(DEPTH);
     }
     return 1.0;
 }
@@ -31,7 +35,7 @@ float tenary(bool predicate, float if_true, float if_false) {
 }
 
 void main() {
-    float ratio = pixel((vec3(vPos.x, vPos.y, 1.0) * transform).xy);
+    float ratio = pixel(vPos * scale);
     float hue = mod(pow(ratio * 360.0, 1.5), 360.0);
     float saturation = 100.0;
     float value = ratio * 100.0;

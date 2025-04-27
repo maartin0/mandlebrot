@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Event, PointerEvent};
 
-use crate::{matrix::Matrix3, App};
+use crate::{arbitrary_num::ArbitaryNum, matrix::Matrix3, App};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Pointer {
@@ -69,7 +69,7 @@ impl App {
                 if app.viewport.pointers.len() == 1 {
                     // Pan
                     app.viewport.viewport_transform *=
-                        Matrix3([1.0, 0.0, -delta_x, 0.0, 1.0, delta_y, 0.0, 0.0, 1.0]);
+                        Matrix3::translate(ArbitaryNum::from(-delta_x), ArbitaryNum::from(delta_y));
                 } else {
                     // Touchscreen: scale around midpoint by applying affine transform
                     let (xs, ys): (Vec<f32>, Vec<f32>) = app
@@ -84,12 +84,16 @@ impl App {
                     let j = delta_y * (pointer_y - midpoint_y).signum();
                     let factor =
                         1.0 - (i.powf(2.0) + j.powf(2.0)).powf(0.5) * i.signum() * j.signum();
+                    app.viewport.viewport_transform *= Matrix3::translate(
+                        ArbitaryNum::from(midpoint_x),
+                        ArbitaryNum::from(midpoint_y),
+                    );
                     app.viewport.viewport_transform *=
-                        Matrix3([1.0, 0.0, midpoint_x, 0.0, 1.0, midpoint_y, 0.0, 0.0, 1.0]);
-                    app.viewport.viewport_transform *=
-                        Matrix3([factor, 0.0, 0.0, 0.0, factor, 0.0, 0.0, 0.0, 1.0]);
-                    app.viewport.viewport_transform *=
-                        Matrix3([1.0, 0.0, -midpoint_x, 0.0, 1.0, -midpoint_y, 0.0, 0.0, 1.0]);
+                        Matrix3::scale(ArbitaryNum::from(factor), ArbitaryNum::from(factor));
+                    app.viewport.viewport_transform *= Matrix3::translate(
+                        ArbitaryNum::from(-midpoint_x),
+                        ArbitaryNum::from(-midpoint_y),
+                    );
                 }
                 app.draw();
             }
