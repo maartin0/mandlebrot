@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Event, PointerEvent};
 
-use crate::{matrix::Matrix3, util::console_debug, App};
+use crate::{matrix::Matrix3, App};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Pointer {

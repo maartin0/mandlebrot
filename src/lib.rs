@@ -15,6 +15,8 @@ mod shader;
 mod util;
 mod viewport;
 
+const DEPTH: u16 = 1000;
+
 #[derive(Clone, Debug)]
 struct App {
     window: Window,
@@ -51,7 +53,7 @@ impl App {
         let context: WebGl2RenderingContext = canvas.get_context("webgl2")?.unwrap().dyn_into()?;
         let performance = window.performance().unwrap();
 
-        let props = init_shaders(&context, 1000);
+        let props = init_shaders(&context, DEPTH);
 
         let mut result = Self {
             window,
